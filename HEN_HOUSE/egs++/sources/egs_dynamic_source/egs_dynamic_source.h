@@ -1,7 +1,7 @@
 /*
 ###############################################################################
 #
-#  EGSnrc egs++ transformed source headers
+#  EGSnrc egs++ dynamic source headers
 #  Copyright (C) 2015 National Research Council Canada
 #
 #  This file is part of EGSnrc.
@@ -21,7 +21,7 @@
 #
 ###############################################################################
 #
-#  Author:          Iwan Kawrakow, 2005
+#  Author:          Blake Walters, 2017
 #
 #  Contributors:    Reid Townson
 #
@@ -72,7 +72,7 @@
 
 The dynamic source allows the user to simulate dynamic motion of
 any other source.  The user specifies a number of control points,
-where each control point comprises a set of incident polar coordinates 
+where each control point comprises a set of incident polar coordinates
 plus a monitor unit index.  The polar coordinates are:
 (xiso,yiso,ziso) = coordinates of isocentre of rotation (cm)
 dsource = length of vector from isocentre to source origin (cm).
@@ -84,9 +84,9 @@ phi = angle of rotation of dsource about Z-axis (deg).
       +ve values define clockwise rotations.  Angle is defined
       relative to the +X-axis.
 phicol = angle of rotation of source about -dsource (deg).  +ve
-         value defines clockwise rotations. 
+         value defines clockwise rotations.
 The monitor unit index, mu, controls dynamic motion as described
-below. 
+below.
 The generic input is:
 \verbatim
 :start source:
@@ -100,15 +100,15 @@ The generic input is:
        .
        .
        .
-       control point N = xiso(N) yiso(N) ziso(N) dsource(N) theta(N) phi(N) phicol(N) mu(N) 
+       control point N = xiso(N) yiso(N) ziso(N) dsource(N) theta(N) phi(N) phicol(N) mu(N)
     :stop motion:
 :stop source:
 \endverbatim
 Control points must be defined such that mu(i+1)>=mu(i), where mu(i)
 is the value of mu for control point i.  The mu(i) are automatically
-normalized by mu(N), where N is the number of control points.  
-Continuous, dynamic motion between control points is simulated by choosing a random 
-number, R, on (0,1] and, for mu(i)<R<=mu(i+1), setting incident source 
+normalized by mu(N), where N is the number of control points.
+Continuous, dynamic motion between control points is simulated by choosing a random
+number, R, on (0,1] and, for mu(i)<R<=mu(i+1), setting incident source
 coordinate, P, where P is one of xiso, yiso, ziso, dsource, theta,
 phi, or phicol, using:
 P=P(i)+[P(i+1)-P(i)]/[mu(i+1)-mu(i)]*[R-mu(i)]
@@ -117,7 +117,7 @@ only makes sense if mu(1)=0.0.  However, the source can function
 with mu(1)>0.0, in the case where a user desires to eliminate particles
 associated with a range of mu values, but there will be a lot of
 warning messages.
- 
+
 A simple example is shown below.  This first defines a monoenergetic
 (1 MV) photon source in the Z-direction collimated to a 2x2 field
 centred on the Z-axis.  The control points place the source a
@@ -131,7 +131,7 @@ If the source being made to move dynamically supplies its own monitor
 unit index (iaea_phsp_source and egs_beam_source only), then the dynamic
 motion can be synchronized with the motion of component modules
 (MLC's, jaws) within the source by setting "synchronize motion"
-to "yes". 
+to "yes".
 \verbatim
 :start source definition:
     :start source:
@@ -155,8 +155,8 @@ to "yes".
         :start motion:
             control point 1 = 0 0 0 100 0 0 0 0
             control point 2 = 0 0 0 100 360 0 0 0.5
-            control point 3 = 0 0 0 100 90 0 0 0.5 
-            control point 4 = 0 0 0 100 90 360 0 1.0 
+            control point 3 = 0 0 0 100 90 0 0 0.5
+            control point 4 = 0 0 0 100 90 360 0 1.0
         :stop motion:
     :stop source:
 
@@ -174,22 +174,50 @@ public:
 
     struct EGS_ControlPoint {
 
-       EGS_Vector iso; //isocentre position
-       EGS_Float dsource; //source-isocentre distance
-       EGS_Float theta; //angle of rotation about Y-axis
-       EGS_Float phi;  //angle of rotation about Z-axis
-       EGS_Float phicol; //angle of rotation in source plane
-       EGS_Float mu; //monitor unit index for control point
+        EGS_Vector iso; //isocentre position
+        EGS_Float dsource; //source-isocentre distance
+        EGS_Float theta; //angle of rotation about Y-axis
+        EGS_Float phi;  //angle of rotation about Z-axis
+        EGS_Float phicol; //angle of rotation in source plane
+        EGS_Float mu; //monitor unit index for control point
     };
 
     /*! \brief Construct a dynamic source using \a Source as the
-    source
+    source and cpts as the control points.  Not sure if this
+    will ever be used but here just in case.
     */
-    EGS_DynamicSource(EGS_BaseSource *Source,
-                          const string &Name="", EGS_ObjectFactory *f=0) :
-        EGS_BaseSource(Name,f), source(Source) {
+    EGS_DynamicSource(EGS_BaseSource *Source, vector<EGS_ControlPoint> cpts,
+                      const string &Name="", EGS_ObjectFactory *f=0) :
+        EGS_BaseSource(Name,f), source(Source), valid(true) {
+        //do some checks on cpts
+        if (cpts.size()<2) {
+            egsWarning("EGS_DynamicSource: not enough or missing control points.\n");
+            valid = false;
+        }
+        else {
+            if (cpts[0].mu > 0.0) {
+                egsWarning("EGS_DynamicSource: mu index of control point 1 > 0.0.  This will generate many warning messages.\n");
+            }
+            int npts = cpts.size();
+            for (int i=0; i<npts; i++) {
+                if (i>0 && cpts[i].mu < cpts[i-1].mu) {
+                    egsWarning("EGS_DynamicSource: mu index of control point %i < mu index of control point %i\n",i,i-1);
+                    valid = false;
+                }
+                if (cpts[i].mu<0.0) {
+                    egsWarning("EGS_DynamicSource: mu index of control point %i < 0.0\n",i);
+                    valid = false;
+                }
+            }
+            //normalize mu values
+            for (int i=0; i<npts-1; i++) {
+                cpts[i].mu /= cpts[npts-1].mu;
+            }
+        }
+        setUp();
     };
-    /*! \brief Construct a dynamic source from the input \a inp */
+
+    /*! \brief Construct a dynamic source from the user input */
     EGS_DynamicSource(EGS_Input *, EGS_ObjectFactory *f=0);
 
     ~EGS_DynamicSource() {
@@ -203,18 +231,20 @@ public:
         EGS_ControlPoint ipt;  //the actual rotation coords
         EGS_Float rand;
         EGS_I64 c;
-        while(err) {
-           c = source->getNextParticle(rndm,q,latch,E,wt,x,u);
-           if (sync) {
-             rand = source->getMu();
-             if (rand<0) {
-                egsWarning("EGS_DynamicSource: You have selected synchronization of dynamic source with %s\n",source->getObjectName().c_str());
-                egsWarning("However, this source does not return mu values for each particle.  Will turn off synchronization.\n");
-                sync = false;
-             }
-           }
-           if (!sync) rand = rndm->getUniform();
-           err = getCoord(rand,ipt);
+        while (err) {
+            c = source->getNextParticle(rndm,q,latch,E,wt,x,u);
+            if (sync) {
+                rand = source->getMu();
+                if (rand<0) {
+                    egsWarning("EGS_DynamicSource: You have selected synchronization of dynamic source with %s\n",source->getObjectName().c_str());
+                    egsWarning("However, this source does not return mu values for each particle.  Will turn off synchronization.\n");
+                    sync = false;
+                }
+            }
+            if (!sync) {
+                rand = rndm->getUniform();
+            }
+            err = getCoord(rand,ipt);
         }
 
         //translate source in Z
@@ -227,7 +257,7 @@ public:
         EGS_RotationMatrix Rtheta(EGS_RotationMatrix::rotY(ipt.theta));
         EGS_RotationMatrix Rphi(EGS_RotationMatrix::rotZ(ipt.phi));
         //apply rotations in specific order and then translate relative
-        //to the isocentre 
+        //to the isocentre
         u=Rphi*Rtheta*Rcol*u;
         x=Rphi*Rtheta*Rcol*x + ipt.iso;
         return c;
@@ -257,16 +287,16 @@ public:
 
 protected:
 
-    EGS_BaseSource *source; //!< The source being rotated 
+    EGS_BaseSource *source; //!< The source being rotated
 
     vector<EGS_ControlPoint> cpts;  //control point
 
-    int ncpts;  //no. of control points 
+    int ncpts;  //no. of control points
 
-    bool valid; //is this a valid source 
- 
+    bool valid; //is this a valid source
+
     bool sync; //set to true if source motion synched with mu read from
-               //iaea phsp or beam simulation source 
+    //iaea phsp or beam simulation source
 
     int getCoord(EGS_Float rand, EGS_ControlPoint &ipt);
 
