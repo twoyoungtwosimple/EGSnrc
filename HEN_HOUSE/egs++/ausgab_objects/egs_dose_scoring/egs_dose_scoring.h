@@ -24,6 +24,7 @@
 #  Author:          Ernesto Mainegra-Hing, 2012
 #
 #  Contributors:    Reid Townson
+#                   Blake Walters
 #
 ###############################################################################
 #
@@ -162,7 +163,7 @@ the first volume entry or a default of 1 g/cm3 is used.
 If one of the geometries in the simulation is an EGS_XYZGeometry, then the user
 has the option to output the dose in the voxels of this geometry to a file.  Currently,
 the only available output format is the .3ddose format, which is familiar to users
-of DOSXYZnrc (see DOSXYZnrc users manual for more details). In this case, 
+of DOSXYZnrc (see DOSXYZnrc users manual for more details). In this case,
 masses of each voxel are available through the member function getMass of
 EGS_XYZGeometry.  An example input to obtain a .3ddose file for an EGS_XYZGeometry is given below:
 
@@ -177,11 +178,11 @@ EGS_XYZGeometry.  An example input to obtain a .3ddose file for an EGS_XYZGeomet
      file type = 3ddose (currently the only format available)
   :stop output dose file:
 :stop ausgab object:
-\endverbatim 
+\endverbatim
 
 Output is to the file some_name.3ddose.  Note that in this example, region doses for the
 simulation geometry have been turned off to avoid outputting the dose for every voxel
-in the EGS_XYZGeometry to the screen/.egslog file. 
+in the EGS_XYZGeometry to the screen/.egslog file.
 
 TODO:
  - Classify in primary, scattered and total dose
@@ -209,7 +210,7 @@ public:
 
         //score in file array if requested
         if (ir >=0 && doseF && iarg <=4 && df_reg[ir] >= 0 && edep) {
-             doseF->score(df_reg[ir], edep*app->top_p.wt);
+            doseF->score(df_reg[ir], edep*app->top_p.wt);
         }
 
         /*** Check if scoring in current region ***/
@@ -239,10 +240,10 @@ public:
         if (iarg <= 4 && imed >= 0 && edep > 0 && doseM) {
             doseM->score(imed, edep*app->top_p.wt);
         }
-   
+
         //score in file array if requested
         if (ir >= 0 && doseF && iarg <=4 && df_reg[ir] >= 0 && edep) {
-             doseF->score(df_reg[ir], edep*app->top_p.wt);
+            doseF->score(df_reg[ir], edep*app->top_p.wt);
         }
 
         /*** Check if scoring in current region ***/
@@ -352,7 +353,7 @@ protected:
 
     EGS_BaseGeometry *dose_geom; //EGS_XYZGeometry for which to output dose to file
     EGS_ScoringArray *doseF;  //!< Scoring dose in each voxel in EGS_XYZGeometry
-    vector<int> df_reg; //array mapping global reg. no. onto reg. no. in EGS_XYZGeometry 
+    vector<int> df_reg; //array mapping global reg. no. onto reg. no. in EGS_XYZGeometry
     bool output_dose_file; //set to true if outputting a dose file
     int file_type;           //output file type--currently only .3ddose (file_type=0) supported
     string df_name;          //output file name--put here for convenience sake
