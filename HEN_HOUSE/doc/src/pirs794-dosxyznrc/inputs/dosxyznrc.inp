@@ -16,7 +16,7 @@
    Z-axis into the page. Voxel dimensions are completely variable in
    all three directions. For more detail on geometry see subroutine HOWFAR
 
-  Unit Assignments
+  Unit Assignments                                           
   ================
 
      Unit 1   Output summary and results
@@ -34,7 +34,7 @@
      Unit 44  Full phase-space data set, such as output from BEAM
      $CTUnitNumber (normally 45)  CT data set input
 
-   DESCRIPTION OF INPUT FILE (on unit 5)
+   DESCRIPTION OF INPUT FILE (on unit 5)                         
    =========================
 
   Record 1   TITLE     Up to 80 characters
@@ -178,7 +178,7 @@
    Records 10--12 (6--8 if NMED=0) Refer to srcxyznrc.mortran
 *******************************************************************************
 
-                Input source parameters read by srcxyznrc.mortran
+                Input source parameters read by srcxyznrc.mortran       
                 ==============================================
               (see section 4 of DOSXYZnrc User's Manual for details)
 
